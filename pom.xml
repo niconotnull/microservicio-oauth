@@ -71,6 +71,8 @@
 			<artifactId>spring-security-jwt</artifactId>
 			<version>1.1.1.RELEASE</version>
 		</dependency>
+		<!-- Dependencia que nos permite marcar nuestro microservicio como un cliente -->
+		<!-- Nos ayudara a establecer la conexión con el servidor de configuración -->
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-starter-config</artifactId>

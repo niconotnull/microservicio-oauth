@@ -1,8 +1,12 @@
 package com.springboot.oauth.security;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.oauth2.config.annotation.configurers.ClientDetailsServiceConfigurer;
@@ -21,6 +25,8 @@ import java.util.Base64;
 @EnableAuthorizationServer
 public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdapter {
 
+    private final static Logger log = LoggerFactory.getLogger(AuthorizationServerConfig.class);
+
     /**
      * En esta clase se realiza la configuración  del servidor de autorización, que se encargara
      * de todo el proceso del login por el lado de ouath2, generacón del token desde el proceso de
@@ -28,8 +34,15 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
      * SpringSecurutyConfig
      */
 
-    //    @Value("${config.security.oauth.jwt.key}")
-    private String llaveJwt = "123445jkdjsdksdjaskjdlkajdadjasddisinid90sd9js9d9sdcsdjc9sdasd8j9as8d98sdjc98sdjc9asdjsdsdsdsdwewwwwwwwwwwwwwwwwwwwwewsd98sadjsd9sd9d9d9s9ds9asasasasasd9d";
+    @Autowired
+    private Environment env;
+
+    @Value("${authorization.username}")
+    private String userApp;
+
+    @Value("${authorization.key}")
+    private String keyApp;
+
 
     /**
      * Se realizo la configuración previamente en el Paso 3 de SpringSecurityConfig
@@ -73,19 +86,21 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
      */
     @Override
     public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
-        clients.inMemory().withClient(llaveJwt)
-                .secret(passwordEncoder.encode("123456"))
+        clients.inMemory().withClient(userApp)
+                .secret(passwordEncoder.encode(keyApp))
                 .scopes("read","write")
                 .authorizedGrantTypes("password", "refresh_token")
                 .accessTokenValiditySeconds(3600)
                 .refreshTokenValiditySeconds(3600)
                 .and()
                 .withClient("androidapp")
-                .secret(passwordEncoder.encode("123456"))
+                .secret(passwordEncoder.encode(keyApp))
                 .scopes("read","write")
                 .authorizedGrantTypes("password", "refresh_token")
                 .accessTokenValiditySeconds(3600)
                 .refreshTokenValiditySeconds(3600);
+
+        validarAmbiente();
     }
 
 
@@ -139,7 +154,23 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
     @Bean
     public JwtAccessTokenConverter accessTokenConverter() {
         JwtAccessTokenConverter tokenConverter = new JwtAccessTokenConverter();
-        tokenConverter.setSigningKey(Base64.getEncoder().encodeToString(llaveJwt.getBytes()));
+        tokenConverter.setSigningKey(Base64.getEncoder().encodeToString(userApp.getBytes()));
         return tokenConverter;
+    }
+
+    /**
+     * Este método solo es para validar el tipo de ambiente que se toma del archivo
+     * bootstrap.properties configuracion que toma de microservicio-config
+     */
+    private void validarAmbiente(){
+        if(env.getActiveProfiles().length>0 && env.getActiveProfiles()[0].equals("dev")){
+            log.info("Ambiente : "+env.getProperty("configuracion.texto"));
+            log.info("Autor : "+env.getProperty("configuracion.autor"));
+            log.info("Email : "+env.getProperty("configuracion.autor.email"));
+        }else  if(env.getActiveProfiles().length>0 && env.getActiveProfiles()[0].equals("prod")){
+            log.info("Ambiente : "+env.getProperty("configuracion.texto"));
+            log.info("Autor : "+env.getProperty("configuracion.autor"));
+            log.info("Email : "+env.getProperty("configuracion.autor.email"));
+        }
     }
 }
